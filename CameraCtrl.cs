@@ -13,9 +13,14 @@ public class CameraCtrl : MonoBehaviour {
 
     [SerializeField]
     List<Transform> _focusPts = new List<Transform>();
+    Transform _player;
 	void Start ()
     {
-            
+        //get player transform  add to focus point
+        _player = GameObject.FindGameObjectWithTag("Player").transform;
+        if (_player)
+            _focusPts.Add(_player);
+             
 	}
 	
 	// Update is called once per frame
@@ -37,11 +42,13 @@ public class CameraCtrl : MonoBehaviour {
         if(_tSet.Count>0)
             for(int _x = 0; _x<_tSet.Count; _x++)
             {
+                if (!_tSet[_x])
+                    continue;
                 _curPos += _tSet[_x].position;
             }
 
         _curPos = _curPos /( _tSet.Count + 1);
-        return _curPos;
+        return Utilities.transformZPos(transform.position.z,_curPos);
     }
 
 
