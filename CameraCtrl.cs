@@ -7,6 +7,9 @@ public class CameraCtrl : MonoBehaviour {
     // Use this for initialization
     [SerializeField]
     GameObject _midPoint;
+
+    [SerializeField]
+    float _distance;
     [SerializeField]
     Transform _target;
     Vector3 _initialVelocity = Vector3.zero;
@@ -28,10 +31,15 @@ public class CameraCtrl : MonoBehaviour {
     {
         move();
 	}
+    void Update()
+    {
+        viewFrustum();
+
+    }
 
     void move()
     {
-        var _tar =
+       // var _tar =
         transform.position = Vector3.SmoothDamp(transform.position, averageFocusPts(_focusPts), ref _initialVelocity, 0.2f);
     }
 
@@ -49,6 +57,47 @@ public class CameraCtrl : MonoBehaviour {
 
         _curPos = _curPos /( _tSet.Count + 1);
         return Utilities.transformZPos(transform.position.z,_curPos);
+    }
+
+
+    void viewFrustum()
+    {
+        ///var distance = transform.position.z*-1f;
+        var frustumHeight = 2.0f * _distance * Mathf.Tan(Camera.main.fieldOfView * 0.5f * Mathf.Deg2Rad);
+        var frustumWidth = frustumHeight * Camera.main.aspect;
+
+        //Top Right
+        var pos1 = transform.position;
+            pos1 += Vector3.forward * _distance;
+            pos1 += (Vector3.up * frustumHeight);
+            pos1 += Vector3.right * frustumWidth;
+        
+        //Bottom Right
+        var pos2 = transform.position;
+            pos2 += Vector3.forward * _distance;
+            pos2 -= (Vector3.up * frustumHeight);
+            pos2 += Vector3.right * frustumWidth;
+
+        // Top Left
+        var pos3 = transform.position;
+            pos3 += Vector3.forward * _distance;
+            pos3 += (Vector3.up * frustumHeight);
+            pos3 -= Vector3.right * frustumWidth;
+        // Bottom Left
+        var pos4 = transform.position;
+            pos4 += Vector3.forward * _distance;
+            pos4 -= (Vector3.up * frustumHeight);
+            pos4 -= Vector3.right * frustumWidth;
+
+
+
+        // pos1 += transform.position;
+        //    pos2 += transform.position;
+        Debug.DrawLine(pos3, pos1, Color.red);
+        Debug.DrawLine(pos4, pos2, Color.red);
+        Debug.DrawLine(pos3, pos4, Color.red);
+        Debug.DrawLine(pos1, pos2, Color.red);
+
     }
 
 
