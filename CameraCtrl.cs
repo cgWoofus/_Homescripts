@@ -53,3 +53,12 @@ public class CameraCtrl : MonoBehaviour {
 
 
 }
+
+public class UIMenu
+{
+    bool _decision;
+
+    public UIMenu()
+    { }
+
+}
