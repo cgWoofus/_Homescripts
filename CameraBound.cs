@@ -3,53 +3,30 @@ using System.Collections.Generic;
 
 public class CameraBound{
     public List<Bounds> _boundCollection = new List<Bounds>();
-    LevelHandler _lvlHandle;
     Stack<Vector2> _referenceStack = new Stack<Vector2>();
     public CameraBound()
     {
-
-
-
-    //    CameraBound._boundCollection.Add(_bound);
-
     }
 
-    /// <summary>
-    /// Check Registered BoundList for this point
-    /// </summary>
-    /// <param name="_ptOfReference"></param>
-    /// <returns></returns>
-    public float checkList(params Vector2[] _ptOfReference)
+    public bool checkPoints(FrustumEdge _edge)
     {
-        // if Collection does not exist pass  normal values;    
-
-
-        if (_boundCollection.Count < 1)
-            return 1f;
-
-        int _passCount = 0 ;
-        for (int _y = 0; _y < _ptOfReference.Length; _y++)
-        {            
-            for (int _x = 0; _x < _boundCollection.Count; _x++)
+        var _vertices = new Vector2[2] { _edge._vertexA, _edge._vertexB };
+        int _passCount = 0;
+        for (int _z = 0; _z < 2; _z++)
+        for (int _y = 0; _y < _boundCollection.Count; _y++)
+        {
+            if (_boundCollection[_y].Contains(_vertices[_z]))
             {
-                if (_boundCollection[_x].Contains(_ptOfReference[_y]))
-                {                  
-                    _passCount++;
-                    break;
-                }
+                _passCount++;
+                break;
             }
         }
 
-        if (_passCount == _ptOfReference.Length)
-            return 1;
-        else
-            return 0;
+        return _passCount == 2 ?  true : false;
+
     }
 
-    /// <summary>
-    /// pass Focus Gameobjects to be converted into Bounds
-    /// </summary>
-    /// <param name="_focusObjects"></param>
+
     public  void FillBoundList(LevelHandler _lvlHandle)
     {
         var _focusObjects = _lvlHandle._focusPts;

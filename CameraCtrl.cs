@@ -36,45 +36,65 @@ public class CameraCtrl : MonoBehaviour {
     [SerializeField]
     LevelHandler _lvlHandle;
 
+    FrustumEdge _left, _right, _up, _down;
 
-	void Start ()
+
+    void Start()
     {
         //get player transform  add to focus point
         includePlayer(_includePlayer);
         // instance bound manager            
         _boundManager = new CameraBound();
-        if (_lvlHandle&& _enableBounds)
+        if (_lvlHandle && _enableBounds)
             _boundManager.FillBoundList(_lvlHandle);
 
 
-        _frustumRight = new Vector2[] { _topRight, _bottomRight};
-        _frustumLeft = new Vector2[] { _topLeft, _bottomLeft };
-	}
-	
-	// Update is called once per frame
-	void FixedUpdate ()
+        //_frustumRight = new Vector2[] { _topRight, _bottomRight};
+        // _frustumLeft = new Vector2[] { _topLeft, _bottomLeft };
+        _left = new FrustumEdge();
+        _right = new FrustumEdge();
+        _up = new FrustumEdge();
+        _down = new FrustumEdge();
+
+
+    }
+
+    // Update is called once per frame
+    void FixedUpdate()
     {
         //check if movement is within bounds
         move();
-	}
+    }
     void Update()
     {
 
         createFrustum();
+        checkEdges();
 
     }
 
     void move()
     {
-        // var _tar =
-       var _bndResult = _boundManager.checkList(_topLeft, _topRight, _bottomLeft, _bottomRight);
+        var _targetPos = averageFocusPts(_focusPts);
+        transform.position = Vector3.SmoothDamp(transform.position, _targetPos, ref _initialVelocity, 0.2f);
+    }
 
-       var _targetPos = averageFocusPts(_focusPts);
 
-     //  _targetPos *= _bndResult;
-       if(_bndResult==1)
-       transform.position = Vector3.SmoothDamp(transform.position, _targetPos , ref _initialVelocity, 0.2f);
-   
+    void checkEdges()
+    {
+        //check left edge
+        // if both vertex detected something offset mipoint by some amount
+        var _leftAdjust = _boundManager.checkPoints(_left) == true ? 0f : 0.5f;
+        var _rightAdjust = _boundManager.checkPoints(_right) == true ? 0f : -0.5f;
+        var _upAdjust = _boundManager.checkPoints(_up) == true ? 0f : -0.5f;
+        var _downAdjust = _boundManager.checkPoints(_down) == true ? 0f : 0.5f;
+
+        var _side = Vector2.right * (_leftAdjust + _rightAdjust);
+        var _nod = Vector2.up * (_upAdjust + _downAdjust);
+
+        _midPoint.transform.localPosition = _side + _nod;
+
+
     }
 
     Vector3 averageFocusPts(List<Transform> _tSet)
@@ -130,6 +150,13 @@ public class CameraCtrl : MonoBehaviour {
 
         _bottomLeft = pos4;
 
+
+
+        _left.setVertices(_topLeft, _bottomLeft);
+        _right.setVertices(_topRight , _bottomRight);
+        _up.setVertices(_topLeft,_topRight);
+        _down.setVertices(_bottomLeft, _bottomRight);
+
         viewFrustum(pos1, pos2, pos3, pos4);
 
     }
@@ -167,6 +194,16 @@ public class UIMenu
 
     public UIMenu()
     { }
+   
+}
 
+public class FrustumEdge
+{
+    public  Vector2  _vertexA,_vertexB;
+    public void setVertices(Vector2 _v1, Vector2 _v2)
+    {
+        _vertexA = _v1;
+        _vertexB = _v2;
+    }
 }
 
