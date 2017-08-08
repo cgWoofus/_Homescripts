@@ -10,37 +10,71 @@ public class CameraCtrl : MonoBehaviour {
 
     [SerializeField]
     float _distance;
-    [SerializeField]
-    Transform _target;
     Vector3 _initialVelocity = Vector3.zero;
+    [SerializeField]
+    Camera _camera;
+
+    #region Switches
+    [SerializeField]
+    bool _includePlayer, _enableBounds;
+    #endregion
+
+    /// <summary>
+    ///  frustum points
+    /// </summary>
+    [SerializeField]
+    Vector2 _topLeft, _topRight, _bottomLeft, _bottomRight;
+
+    Vector2[] _frustumRight;
+    Vector2[] _frustumLeft;
+
 
     [SerializeField]
     List<Transform> _focusPts = new List<Transform>();
     Transform _player;
+    CameraBound _boundManager;
+    [SerializeField]
+    LevelHandler _lvlHandle;
+
+
 	void Start ()
     {
         //get player transform  add to focus point
-        _player = GameObject.FindGameObjectWithTag("Player").transform;
-        if (_player)
-            _focusPts.Add(_player);
-             
+        includePlayer(_includePlayer);
+        // instance bound manager            
+        _boundManager = new CameraBound();
+        if (_lvlHandle&& _enableBounds)
+            _boundManager.FillBoundList(_lvlHandle);
+
+
+        _frustumRight = new Vector2[] { _topRight, _bottomRight};
+        _frustumLeft = new Vector2[] { _topLeft, _bottomLeft };
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate ()
     {
+        //check if movement is within bounds
         move();
 	}
     void Update()
     {
-        viewFrustum();
+
+        createFrustum();
 
     }
 
     void move()
     {
-       // var _tar =
-        transform.position = Vector3.SmoothDamp(transform.position, averageFocusPts(_focusPts), ref _initialVelocity, 0.2f);
+        // var _tar =
+       var _bndResult = _boundManager.checkList(_topLeft, _topRight, _bottomLeft, _bottomRight);
+
+       var _targetPos = averageFocusPts(_focusPts);
+
+     //  _targetPos *= _bndResult;
+       if(_bndResult==1)
+       transform.position = Vector3.SmoothDamp(transform.position, _targetPos , ref _initialVelocity, 0.2f);
+   
     }
 
     Vector3 averageFocusPts(List<Transform> _tSet)
@@ -59,48 +93,72 @@ public class CameraCtrl : MonoBehaviour {
         return Utilities.transformZPos(transform.position.z,_curPos);
     }
 
-
-    void viewFrustum()
+    void createFrustum()
     {
-        ///var distance = transform.position.z*-1f;
-        var frustumHeight = 2.0f * _distance * Mathf.Tan(Camera.main.fieldOfView * 0.5f * Mathf.Deg2Rad);
-        var frustumWidth = frustumHeight * Camera.main.aspect;
+        var frustumHeight = 1.0f * _distance * Mathf.Tan(_camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+        var frustumWidth = frustumHeight * _camera.aspect;
 
         //Top Right
-        var pos1 = transform.position;
-            pos1 += Vector3.forward * _distance;
-            pos1 += (Vector3.up * frustumHeight);
-            pos1 += Vector3.right * frustumWidth;
-        
+        var pos1 = _camera.transform.position;
+        pos1 += Vector3.forward * _distance;
+        pos1 += (Vector3.up * frustumHeight);
+        pos1 += Vector3.right * frustumWidth;
+
+        _topRight = pos1;
+
         //Bottom Right
-        var pos2 = transform.position;
-            pos2 += Vector3.forward * _distance;
-            pos2 -= (Vector3.up * frustumHeight);
-            pos2 += Vector3.right * frustumWidth;
+        var pos2 = _camera.transform.position;
+        pos2 += Vector3.forward * _distance;
+        pos2 -= (Vector3.up * frustumHeight);
+        pos2 += Vector3.right * frustumWidth;
+
+        _bottomRight = pos2;
 
         // Top Left
-        var pos3 = transform.position;
-            pos3 += Vector3.forward * _distance;
-            pos3 += (Vector3.up * frustumHeight);
-            pos3 -= Vector3.right * frustumWidth;
+        var pos3 = _camera.transform.position;
+        pos3 += Vector3.forward * _distance;
+        pos3 += (Vector3.up * frustumHeight);
+        pos3 -= Vector3.right * frustumWidth;
+
+        _topLeft = pos3;
+
         // Bottom Left
-        var pos4 = transform.position;
-            pos4 += Vector3.forward * _distance;
-            pos4 -= (Vector3.up * frustumHeight);
-            pos4 -= Vector3.right * frustumWidth;
+        var pos4 = _camera.transform.position;
+        pos4 += Vector3.forward * _distance;
+        pos4 -= (Vector3.up * frustumHeight);
+        pos4 -= Vector3.right * frustumWidth;
 
+        _bottomLeft = pos4;
 
+        viewFrustum(pos1, pos2, pos3, pos4);
 
-        // pos1 += transform.position;
-        //    pos2 += transform.position;
+    }
+
+    private static GameObject CreateFrustumPoint(Vector3 pos1)
+    {
+        var _object = new GameObject("topRight").transform;
+        _object.transform.position = pos1;
+
+        return _object.gameObject;
+    }
+
+    private static void viewFrustum(Vector3 pos1, Vector3 pos2, Vector3 pos3, Vector3 pos4)
+    {
         Debug.DrawLine(pos3, pos1, Color.red);
         Debug.DrawLine(pos4, pos2, Color.red);
         Debug.DrawLine(pos3, pos4, Color.red);
         Debug.DrawLine(pos1, pos2, Color.red);
-
     }
 
+    void includePlayer(bool _decision)
+    {
+        if (!_decision)
+            return;
+         _player = GameObject.FindGameObjectWithTag("Player").transform;
+         if (_player)
+            _focusPts.Add(_player);
 
+    }
 }
 
 public class UIMenu
@@ -111,3 +169,4 @@ public class UIMenu
     { }
 
 }
+
