@@ -203,6 +203,7 @@ public static class Utilities
     }
 
 
+#if UNITY_EDITOR
     public static void CreateFolder(string _rootFolder,string _MainFolder)
     {
         if (!UnityEditor.AssetDatabase.IsValidFolder(string.Format("Assets/Resources/data/{0}", _MainFolder)))
@@ -213,6 +214,6 @@ public static class Utilities
         UnityEditor.AssetDatabase.Refresh();
 
     }
-
+#endif
 
 }

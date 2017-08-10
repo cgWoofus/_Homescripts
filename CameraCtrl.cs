@@ -6,14 +6,14 @@ public class CameraCtrl : MonoBehaviour {
 
     // Use this for initialization
     [SerializeField]
-    GameObject _midPoint;
+    GameObject _midPoint,_midPoint2;
 
     [SerializeField]
     float _distance;
     Vector3 _initialVelocity = Vector3.zero;
     [SerializeField]
     Camera _camera;
-
+     
     #region Switches
     [SerializeField]
     bool _includePlayer, _enableBounds;
@@ -38,6 +38,12 @@ public class CameraCtrl : MonoBehaviour {
 
     FrustumEdge _left, _right, _up, _down;
 
+    #region Restriction Enum
+    enum directionHorizontal { Left, Right, None };
+    enum directionVertical { Up, Down, None }
+    directionHorizontal _myHorizontalRestriction;
+    directionVertical _myVerticalRestricion;
+    #endregion
 
     void Start()
     {
@@ -62,38 +68,81 @@ public class CameraCtrl : MonoBehaviour {
     // Update is called once per frame
     void FixedUpdate()
     {
-        //check if movement is within bounds
-        move();
+        Vector2 _res = _enableBounds ? boundRestriction() : (Vector2)averageFocusPts(_focusPts);
+        move(transform, _res);
     }
+
+    private Vector2 boundRestriction()
+    {
+        //check if movement is within bounds
+        var _rawFocus = averageFocusPts(_focusPts);
+        var _horizontal = Vector2.right * transform.position.x;
+        var _vertical = Vector2.up * transform.position.y;
+        var _normalizedDirection = (_rawFocus - transform.position).normalized;
+        var _directionHorizontal = _normalizedDirection.x < 0 ? directionHorizontal.Left : directionHorizontal.Right;
+        var _directionVertical = _normalizedDirection.y < 0 ? directionVertical.Down : directionVertical.Up;
+
+
+        // if direction of x is negative(left) check if left movement is allowed 
+        if (_myHorizontalRestriction != _directionHorizontal)
+            _horizontal = horizontal(_rawFocus.x);
+
+        if (_myVerticalRestricion != _directionVertical)
+            _vertical = vertical(_rawFocus.y);
+
+        var _res = _horizontal + _vertical;
+        return _res;
+    }
+
     void Update()
     {
 
         createFrustum();
-        checkEdges();
+        if(_enableBounds)
+            checkEdges();
 
     }
 
-    void move()
+    void move(Transform _t , Vector3 _targetPos)
     {
-        var _targetPos = averageFocusPts(_focusPts);
-        transform.position = Vector3.SmoothDamp(transform.position, _targetPos, ref _initialVelocity, 0.2f);
+        //  var _targetPos = averageFocusPts(_focusPts);
+        _t.position = Vector3.SmoothDamp(_t.position, _targetPos, ref _initialVelocity, 0.2f);
+    }
+
+    Vector2 horizontal(float _val)
+    {
+
+        var _pos = Vector2.right * _val;
+        return _pos;
+    }
+
+
+    Vector2 vertical(float _val)
+    {
+        var _pos = Vector2.up * _val;
+        return _pos;
     }
 
 
     void checkEdges()
     {
         //check left edge
-        // if both vertex detected something offset mipoint by some amount
-        var _leftAdjust = _boundManager.checkPoints(_left) == true ? 0f : 0.5f;
-        var _rightAdjust = _boundManager.checkPoints(_right) == true ? 0f : -0.5f;
-        var _upAdjust = _boundManager.checkPoints(_up) == true ? 0f : -0.5f;
-        var _downAdjust = _boundManager.checkPoints(_down) == true ? 0f : 0.5f;
+        const float _offset = 3;
+        var _curPos = _midPoint.transform;
 
-        var _side = Vector2.right * (_leftAdjust + _rightAdjust);
-        var _nod = Vector2.up * (_upAdjust + _downAdjust);
+        if (!_boundManager.checkPoints(_left))
+            _myHorizontalRestriction = directionHorizontal.Left;
+        else if (!_boundManager.checkPoints(_right))
+            _myHorizontalRestriction = directionHorizontal.Right;
+        else
+            _myHorizontalRestriction = directionHorizontal.None;
 
-        _midPoint.transform.localPosition = _side + _nod;
-
+        if (!_boundManager.checkPoints(_up))
+            _myVerticalRestricion = directionVertical.Up;
+        else if (!_boundManager.checkPoints(_down))
+            _myVerticalRestricion = directionVertical.Down;
+        else
+            _myVerticalRestricion = directionVertical.None;
 
     }
 
@@ -187,7 +236,6 @@ public class CameraCtrl : MonoBehaviour {
 
     }
 }
-
 public class UIMenu
 {
     bool _decision;
@@ -195,15 +243,5 @@ public class UIMenu
     public UIMenu()
     { }
    
-}
-
-public class FrustumEdge
-{
-    public  Vector2  _vertexA,_vertexB;
-    public void setVertices(Vector2 _v1, Vector2 _v2)
-    {
-        _vertexA = _v1;
-        _vertexB = _v2;
-    }
 }
 

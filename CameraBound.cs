@@ -17,12 +17,17 @@ public class CameraBound{
         {
             if (_boundCollection[_y].Contains(_vertices[_z]))
             {
-                _passCount++;
+                   // var _distMax = Vector2.Distance(_boundCollection[_y].max, _vertices[_z]);
+                   // var _distMin = Vector2.Distance(_boundCollection[_y].min, _vertices[_z]);
+                    //if(Vector2.Distance(_vertices[_z],_boundCollection[_y].min)
+                    _passCount++;
                 break;
             }
         }
 
-        return _passCount == 2 ?  true : false;
+       
+
+        return _passCount > 0  ?  true : false;
 
     }
 
